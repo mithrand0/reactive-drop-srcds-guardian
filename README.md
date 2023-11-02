@@ -19,6 +19,10 @@ It provides the following features:
 
  In short: everything you need to run a hazzle free server.
 
+## why a separate utility
+
+Doing checks inside srcds.exe or server.dll sounds nice, but if shit hits the fan, such server can still hang. By doing it externally, even if a process hangs, it can be handled correctly. In short, this method is much more reliable.
+
 ## how to use
 
 - Download the latest release from the GitHub Actions tab;
