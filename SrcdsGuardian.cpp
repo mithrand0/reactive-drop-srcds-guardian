@@ -16,6 +16,7 @@
 #include "version.h"
 
 #pragma comment(lib, "urlmon.lib")
+#pragma comment(lib, "Shlwapi.lib")
 
 using std::endl;
 using std::cout;
