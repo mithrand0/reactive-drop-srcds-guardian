@@ -7,7 +7,8 @@ It provides the following features:
 - auto install steamcmd, and a game server of choice (optional); 
 - automatic restarts of servers;
 - automatic server updates from steam;
-- optimizes the resource class for srcds and steamcmd; 
+- optimizes the resource class for srcds and steamcmd;
+- automatically remove crashdumps after a week; 
 - watchdog:
   * checks for memory leaks, and restarts if needed;
   * checks for servers that are hanging;
