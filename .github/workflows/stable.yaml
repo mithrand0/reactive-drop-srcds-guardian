@@ -41,12 +41,12 @@ jobs:
         with:
           name: srcds-guardian
           path: |
-            Release/SourceGuardian.exe
-            Release/SourceGuardian.pdb
+            x64/Release/SrcdsGuardian.exe
+            x64/Release/SrcdsGuardian.pdb
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v3
         with:
           update_release_body: false
           vt_api_key: ${{ secrets.VT_API_KEY }}
           files: |
-            Release/SourceGuardian.exe
+            Release/SrcdsGuardian.exe
