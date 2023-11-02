@@ -41,7 +41,8 @@ jobs:
         with:
           name: srcds-guardian
           path: |
-            x64/Release
+            x64/Release/SourceGuardian.exe
+            x64/Release/SourceGuardian.pdb
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v3
         with:
