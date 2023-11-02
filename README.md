@@ -4,7 +4,8 @@ Little console utility that wraps around srcds.exe and steamcmd.exe
 
 It provides the following features:
 
-- automatic restarts of servers
+- auto install steamcmd, and a game server of choice (optional); 
+- automatic restarts of servers;
 - automatic server updates from steam;
 - optimizes the resource class for srcds and steamcmd; 
 - watchdog:
