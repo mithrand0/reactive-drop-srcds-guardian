@@ -1,16 +1,19 @@
 // SrcdsGuardian.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <thread>
+#include <vector>
+#include <numeric>
 
 #include <Windows.h>
 #include <stdio.h>
 #include <direct.h>
 #include "Shlwapi.h"
 #include "psapi.h"
+
+#include "version.h"
 
 #pragma comment(lib, "urlmon.lib")
 
@@ -22,7 +25,15 @@ static STARTUPINFO si = {0};
 
 static ULARGE_INTEGER lastCPU, lastSysCPU, lastUserCPU;
 static int numProcessors;
-static HANDLE self;
+
+static std::vector<int> load; // load sampling
+
+void kill_srcds() {
+    cout << "! KILLING srcds !" << endl;
+    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, false, pi.dwProcessId);
+    TerminateProcess(hProcess, 1);
+    CloseHandle(hProcess);
+}
 
 void init_cpu() {
     SYSTEM_INFO sysInfo;
@@ -72,8 +83,8 @@ void monitor()
     DWORD dwPid = pi.dwProcessId;
 
     if (dwPid > 0) {
-        cout << "+ checking srcds.exe .." << endl;
-        cout << "  > pid    : " << dwPid << endl;
+        cout << "+ monitoring srcds.exe: ";
+        cout << "pid [" << dwPid << "]";
     
         // memory
         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pi.dwProcessId);
@@ -82,10 +93,29 @@ void monitor()
         SIZE_T used = pmc.PrivateUsage;
         int usedMB = ceil(used / 1024 / 1024);
 
-        cout << "  > memory : " << usedMB << " MB" << endl;
+        cout << ", memory [" << usedMB << " MB]";
 
-        const double load = get_cpu_usage();
-        cout << "  > load   : " << ceil(load) << "%" << endl;
+        // if too high, kill
+        if (usedMB > 1023) {
+            cout << endl << "MEMORY USAGE TOO HIGH" << endl;
+            kill_srcds();
+        }
+
+        const double pct = get_cpu_usage();
+        cout << ", cpu [" << ceil(pct) << "%]";
+
+        constexpr int samples = 20;
+        if (load.size() > samples) load.erase(load.begin());
+        if (pct > 0) load.emplace_back(ceil(pct));
+
+        const int avg = ceil(std::accumulate(load.begin(), load.end(), 0) / load.size());
+
+        cout << ", load [" << avg << "%]" << endl;
+
+        if (load.size() > samples && avg > 98) {
+            cout << endl << "PROCESS IS BURNING CPU" << endl;
+            kill_srcds();
+        }
     }
     
     std::thread th = std::thread(monitor);
@@ -95,7 +125,8 @@ void monitor()
 int main(int argc, char** argv)
 {
     // start
-    cout << "Initializing Srcds-Guardian.." << endl;
+    cout << "Initializing Srcds-Guardian .." << endl;
+    cout << "Version: " << VERSION << "/" << RELEASE << endl;
 
     // find -appid
     int appid = 0;
@@ -127,10 +158,6 @@ int main(int argc, char** argv)
 
         exit(1);
     }
-
-    // priority
-    cout << "Setting priority class.." << endl;
-    SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 
     // check if we have steamcmd in the working directory
     cout << "Checking for SteamCMD.." << endl;
@@ -165,7 +192,7 @@ int main(int argc, char** argv)
         const std::string sAppId = std::to_string(appid);
         const std::string cmdUpdate("steamcmd.exe +force_install_dir " + sAppId + " +login anonymous +app_update " + sAppId + " +quit");
         cout << "Executing: " + cmdUpdate << endl;
-        // XXX: system(cmdUpdate.c_str());
+        system(cmdUpdate.c_str());
 
         // start the game
         const std::string cmdServer(sAppId + "\\srcds.exe -console " + cmdline);
@@ -183,6 +210,12 @@ int main(int argc, char** argv)
             CloseHandle(pi.hThread);
 
             init_cpu();
+
+            // priority
+            cout << "Setting priority class.." << endl;
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SET_INFORMATION, false, pi.dwProcessId);
+            SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
+            CloseHandle(hProcess);
         }
         else {
             cout << "Start failed!" << endl;
