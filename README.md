@@ -21,7 +21,7 @@ It provides the following features:
 
 ## why a separate utility
 
-Doing checks inside srcds.exe or server.dll sounds nice, but if shit hits the fan, such server can still hang. By doing it externally, even if a process hangs, it can be handled correctly. In short, this method is much more reliable.
+Doing checks inside srcds.exe or server.dll sounds nice, but if shit hits the fan, such server can still hang. By doing it externally, even if srcds hangs, it can be handled correctly. In short, this method is much more reliable.
 
 ## how to use
 
