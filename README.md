@@ -30,3 +30,9 @@ It provides the following features:
 ```
 
 That's all.
+
+## disclaimer
+
+This was written in a few hours, and tested with 
+Alien Swarm: Reactive Drop, however it should work for all source
+games. If it doesn't, feel free to open an issue.
