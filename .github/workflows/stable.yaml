@@ -35,7 +35,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.1
       - name: Build release
         run: |
-          MSBuild.exe SourceGuardian.vcxproj -property:Configuration=Release
+          MSBuild.exe SrcdsGuardian.vcxproj -property:Configuration=Release
       - name: Store release
         uses: actions/upload-artifact@v2
         with:
