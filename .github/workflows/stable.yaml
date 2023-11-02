@@ -36,20 +36,17 @@ jobs:
       - name: Build release
         run: |
           MSBuild.exe SrcdsGuardian.vcxproj -property:Configuration=Release
-      - name: Show files
-        run: |
-          find . -type f
       - name: Store release
         uses: actions/upload-artifact@v2
         with:
           name: srcds-guardian
           path: |
-            x64/Release/SourceGuardian.exe
-            x64/Release/SourceGuardian.pdb
+            Release/SourceGuardian.exe
+            Release/SourceGuardian.pdb
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v3
         with:
           update_release_body: false
           vt_api_key: ${{ secrets.VT_API_KEY }}
           files: |
-            x64/Release/SourceGuardian.exe
+            Release/SourceGuardian.exe
