@@ -15,7 +15,7 @@ unique_ptr<SteamCmd> steamcmd;
 
 void monitor()
 {
-    Sleep(5000);
+    Sleep(2000);
 
     steamcmd->checkServer();
     
@@ -57,13 +57,17 @@ int main(int argc, char** argv)
         cout << "SrcdsGuardian.exe -appid 582400 -game reactivedrop -maxplayers 8 -port 27050 +hostname \"My first Reactive Drop Server\"" << endl;
         cout << endl;
 
-        exit(1);
+        exit(2);
     }
 
     // check steamcmd installation
     steamcmd = make_unique<SteamCmd>();
+
     steamcmd->install();
     steamcmd->chdir();
+    
+    steamcmd->cleanUp();
+    steamcmd->updateGame(appid);
 
     cout << "Starting monitor.." << endl;
 
@@ -76,7 +80,6 @@ int main(int argc, char** argv)
     // enter update loop
     while (true) {
 
-        steamcmd->updateGame(appid);
         steamcmd->startGame(appid, cmdline);
 
         cout << "Server did exit." << endl;
@@ -85,5 +88,7 @@ int main(int argc, char** argv)
         
         cout << "Restarting server.." << endl;
         Sleep(10000);
+
+        steamcmd->updateGame(appid);
     }
 }

@@ -45,6 +45,7 @@ int Stats::getCpu() {
     percent = (sys.QuadPart - lastSysCPU.QuadPart) +
         (user.QuadPart - lastUserCPU.QuadPart);
     percent /= (now.QuadPart - lastCPU.QuadPart);
+    percent *= 100;
     //percent /= numProcessors;
     lastCPU = now;
     lastUserCPU = user;
@@ -52,10 +53,9 @@ int Stats::getCpu() {
 
     constexpr int samples = 20;
     if (load.size() > samples) load.erase(load.begin());
-    if (percent > 0) load.emplace_back(ceil(percent));
+    if (percent >= 0) load.emplace_back(ceil(percent));
 
-
-    return percent * 100;
+    return percent;
 }
 
 int Stats::getLoad() {

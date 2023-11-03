@@ -34,7 +34,7 @@ void SteamCmd::chdir() {
     
     if (result > 0) {
         cout << "Error opening steamcmd directory, exiting." << endl;
-        exit(1);
+        exit(2);
     }
 }
 
@@ -83,7 +83,7 @@ void SteamCmd::startGame(int appid, string cmdline) {
 
 void SteamCmd::cleanUp() {
     cout << "Cleanup old crashdumps.." << endl;
-    system("powershell.exe -Command \"Get-ChildItem -File -Recurse -Include '*.mdmp' | Where {`$_.CreationTime -lt (Get-Date).AddDays(-7)} | Remove-Item -Force\"");
+    system("powershell.exe -Command \"Get-ChildItem -File -Recurse -Include '*.mdmp' | Where { $_.CreationTime -lt (Get-Date).AddDays(-7)} | Remove-Item -Force\"");
 }
 
 int SteamCmd::getPid() {
@@ -116,4 +116,5 @@ void SteamCmd::checkServer() {
 
 void SteamCmd::initStats() {
     stats = make_unique<Stats>();
+    game = make_unique<Game>();
 }
