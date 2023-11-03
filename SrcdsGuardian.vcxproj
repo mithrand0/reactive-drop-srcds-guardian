@@ -137,9 +137,15 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Load.cpp" />
     <ClCompile Include="SrcdsGuardian.cpp" />
+    <ClCompile Include="Stats.cpp" />
+    <ClCompile Include="SteamCmd.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Load.h" />
+    <ClInclude Include="Stats.h" />
+    <ClInclude Include="SteamCmd.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

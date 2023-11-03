@@ -2,124 +2,24 @@
 //
 #include <iostream>
 #include <string>
-#include <fstream>
 #include <thread>
-#include <vector>
-#include <numeric>
-
+#include <memory>
 #include <Windows.h>
-#include <stdio.h>
-#include <direct.h>
-#include "Shlwapi.h"
-#include "psapi.h"
 
+#include "SteamCmd.h"
 #include "version.h"
 
-#pragma comment(lib, "urlmon.lib")
-#pragma comment(lib, "Shlwapi.lib")
+using namespace std;
 
-using std::endl;
-using std::cout;
-
-static PROCESS_INFORMATION pi = {0};
-static STARTUPINFO si = {0};
-
-static ULARGE_INTEGER lastCPU, lastSysCPU, lastUserCPU;
-static int numProcessors;
-
-static std::vector<int> load; // load sampling
-
-void kill_srcds() {
-    cout << "! KILLING srcds !" << endl;
-    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, false, pi.dwProcessId);
-    TerminateProcess(hProcess, 1);
-    CloseHandle(hProcess);
-}
-
-void init_cpu() {
-    SYSTEM_INFO sysInfo;
-    FILETIME ftime, fsys, fuser;
-
-    GetSystemInfo(&sysInfo);
-    numProcessors = sysInfo.dwNumberOfProcessors;
-
-    GetSystemTimeAsFileTime(&ftime);
-    memcpy(&lastCPU, &ftime, sizeof(FILETIME));
-
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pi.dwProcessId);
-
-    GetProcessTimes(hProcess, &ftime, &ftime, &fsys, &fuser);
-    memcpy(&lastSysCPU, &fsys, sizeof(FILETIME));
-    memcpy(&lastUserCPU, &fuser, sizeof(FILETIME));
-}
-
-double get_cpu_usage() {
-    FILETIME ftime, fsys, fuser;
-    ULARGE_INTEGER now, sys, user;
-    double percent;
-
-    GetSystemTimeAsFileTime(&ftime);
-    memcpy(&now, &ftime, sizeof(FILETIME));
-
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pi.dwProcessId);
-
-    GetProcessTimes(hProcess, &ftime, &ftime, &fsys, &fuser);
-    memcpy(&sys, &fsys, sizeof(FILETIME));
-    memcpy(&user, &fuser, sizeof(FILETIME));
-    percent = (sys.QuadPart - lastSysCPU.QuadPart) +
-        (user.QuadPart - lastUserCPU.QuadPart);
-    percent /= (now.QuadPart - lastCPU.QuadPart);
-    //percent /= numProcessors;
-    lastCPU = now;
-    lastUserCPU = user;
-    lastSysCPU = sys;
-
-    return percent * 100;
-}
+unique_ptr<SteamCmd> steamcmd;
 
 void monitor()
 {
     Sleep(5000);
 
-    DWORD dwPid = pi.dwProcessId;
-
-    if (dwPid > 0) {
-        cout << "+ monitoring srcds.exe: ";
-        cout << "pid [" << dwPid << "]";
+    steamcmd->checkServer();
     
-        // memory
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pi.dwProcessId);
-        PROCESS_MEMORY_COUNTERS_EX pmc;
-        GetProcessMemoryInfo(hProcess, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
-        SIZE_T used = pmc.PrivateUsage;
-        int usedMB = ceil(used / 1024 / 1024);
-
-        cout << ", memory [" << usedMB << " MB]";
-
-        // if too high, kill
-        if (usedMB > 1023) {
-            cout << endl << "MEMORY USAGE TOO HIGH" << endl;
-            kill_srcds();
-        }
-
-        const double pct = get_cpu_usage();
-        cout << ", cpu [" << ceil(pct) << "%]";
-
-        constexpr int samples = 20;
-        if (load.size() > samples) load.erase(load.begin());
-        if (pct > 0) load.emplace_back(ceil(pct));
-
-        const int avg = ceil(std::accumulate(load.begin(), load.end(), 0) / load.size());
-
-        cout << ", load [" << avg << "%]" << endl;
-
-        if (load.size() > samples && avg > 98) {
-            cout << endl << "PROCESS IS BURNING CPU" << endl;
-            kill_srcds();
-        }
-    }
-    
-    std::thread th = std::thread(monitor);
+    thread th = thread(monitor);
     th.detach();
 }
 
@@ -160,26 +60,15 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    // check if we have steamcmd in the working directory
-    cout << "Checking for SteamCMD.." << endl;
+    // check steamcmd installation
+    steamcmd = make_unique<SteamCmd>();
+    steamcmd->install();
+    steamcmd->chdir();
 
-    LPCWSTR file = L"steamcmd\\steamcmd.exe";
+    cout << "Starting monitor.." << endl;
 
-    if (!PathFileExists(file)) {
-        cout << "SteamCMD cannot be found, downloading.." << endl;
-
-        std::wstring url = L"https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip";
-        LPWSTR out = const_cast<LPWSTR>(L"steamcmd.zip");
-
-        URLDownloadToFile(NULL, url.c_str(), out, 0, NULL);
-        cout << "Download finished, extracting.." << endl;
-        system("powershell.exe -Command Expand-Archive -Path steamcmd.zip -Force");
-    }
-
-    const int result = _chdir("steamcmd");
-
-    cout << "Starting monitor..";
-    std::thread th = std::thread(monitor);
+    steamcmd->initStats();
+    thread th = thread(monitor);
     th.detach();
 
     cout << "Entering loop..";
@@ -187,44 +76,14 @@ int main(int argc, char** argv)
     // enter update loop
     while (true) {
 
-        cout << "Updating game.." << endl;
+        steamcmd->updateGame(appid);
+        steamcmd->startGame(appid, cmdline);
 
-        // install using appid
-        const std::string sAppId = std::to_string(appid);
-        const std::string cmdUpdate("steamcmd.exe +force_install_dir " + sAppId + " +login anonymous +app_update " + sAppId + " +quit");
-        cout << "Executing: " + cmdUpdate << endl;
-        system(cmdUpdate.c_str());
+        cout << "Server did exit." << endl;
 
-        // start the game
-        const std::string cmdServer(sAppId + "\\srcds.exe -console " + cmdline);
-        cout << "Executing: " + cmdServer << endl;
-
-        size_t len;
-        wchar_t wCmd[_MAX_ENV + 1];
-        mbstowcs_s(&len, wCmd, _MAX_ENV + 1, cmdServer.c_str(), _MAX_ENV);
-            
-        if (CreateProcess(NULL, wCmd,
-            NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-            WaitForSingleObject(pi.hProcess, INFINITE);
-
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-
-            init_cpu();
-
-            // priority
-            cout << "Setting priority class.." << endl;
-            HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SET_INFORMATION, false, pi.dwProcessId);
-            SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
-            CloseHandle(hProcess);
-        }
-        else {
-            cout << "Start failed!" << endl;
-            cout << "Error: " << std::to_string(GetLastError()) << endl;
-        }
-
-        cout << "Server did exit, restarting.. " << endl;
-
+        steamcmd->cleanUp();
+        
+        cout << "Restarting server.." << endl;
         Sleep(10000);
     }
 }
