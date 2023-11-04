@@ -69,7 +69,7 @@ int main(int argc, char** argv)
     steamcmd->chdir();
     
     steamcmd->cleanUp();
-    //steamcmd->updateGame(appid, branch);
+    steamcmd->updateGame(appid, branch);
 
     cout << "Starting monitor.." << endl;
 
@@ -91,6 +91,6 @@ int main(int argc, char** argv)
         cout << "Restarting server.." << endl;
         Sleep(10000);
 
-        //steamcmd->updateGame(appid, branch);
+        steamcmd->updateGame(appid, branch);
     }
 }
