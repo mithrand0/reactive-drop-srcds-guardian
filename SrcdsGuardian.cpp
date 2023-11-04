@@ -31,12 +31,13 @@ int main(int argc, char** argv)
 
     // find -appid
     int appid = 0;
+
+    std::string branch = "none"; // public
     std::string cmdline;
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i - 1], "-appid") == 0) {
-            appid = atoi(argv[i]);
-        }
+        if (strcmp(argv[i - 1], "-appid") == 0) appid = atoi(argv[i]);
+        if (strcmp(argv[i - 1], "-beta") == 0) branch = argv[i];
         cmdline = cmdline + " " + argv[i];
     }
 
@@ -55,6 +56,7 @@ int main(int argc, char** argv)
         cout << endl;
         cout << "SrcdsGuardian.exe -appid <appid> [srcds parameters]" << endl;
         cout << "SrcdsGuardian.exe -appid 582400 -game reactivedrop -maxplayers 8 -port 27050 +hostname \"My first Reactive Drop Server\"" << endl;
+        cout << "SrcdsGuardian.exe -appid 582400 -branch beta -game reactivedrop -maxplayers 8 -port 27050 +hostname \"My first Reactive Drop Server\"" << endl;
         cout << endl;
 
         exit(2);
@@ -67,7 +69,7 @@ int main(int argc, char** argv)
     steamcmd->chdir();
     
     steamcmd->cleanUp();
-    steamcmd->updateGame(appid);
+    //steamcmd->updateGame(appid, branch);
 
     cout << "Starting monitor.." << endl;
 
@@ -89,6 +91,6 @@ int main(int argc, char** argv)
         cout << "Restarting server.." << endl;
         Sleep(10000);
 
-        steamcmd->updateGame(appid);
+        //steamcmd->updateGame(appid, branch);
     }
 }

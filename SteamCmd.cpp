@@ -38,19 +38,19 @@ void SteamCmd::chdir() {
     }
 }
 
-void SteamCmd::updateGame(int appid) {
+void SteamCmd::updateGame(int appid, string branch) {
     cout << "Updating game.." << endl;
 
     // install using appid
     const string sAppId = to_string(appid);
-    const string cmdUpdate("steamcmd.exe +force_install_dir " + sAppId + " +login anonymous +app_update " + sAppId + " +quit");
+    const string cmdUpdate("steamcmd.exe +force_install_dir " + sAppId + " +login anonymous +app_update " + sAppId + " -beta " + branch + " +quit");
     cout << "Executing: " + cmdUpdate << endl;
     system(cmdUpdate.c_str());
 }
 
 void SteamCmd::startGame(int appid, string cmdline) {
     // start the game
-    const string cmdServer(to_string(appid) + "\\srcds.exe -console " + cmdline);
+    const string cmdServer(to_string(appid) + "\\srcds.exe -console -nocrashdialog " + cmdline);
     cout << "Executing: " + cmdServer << endl;
 
     size_t len;
@@ -61,6 +61,14 @@ void SteamCmd::startGame(int appid, string cmdline) {
         NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 
         stats->setPid(pi.dwProcessId);
+
+        // priority
+        cout << "Setting priority class.." << endl;
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SET_INFORMATION, false, pi.dwProcessId);
+        SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
+        CloseHandle(hProcess);
+
+        // wait until exit
         WaitForSingleObject(pi.hProcess, INFINITE);
 
         CloseHandle(pi.hProcess);
@@ -69,11 +77,6 @@ void SteamCmd::startGame(int appid, string cmdline) {
         // reset cpu stats
         stats->reset();
 
-        // priority
-        cout << "Setting priority class.." << endl;
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SET_INFORMATION, false, pi.dwProcessId);
-        SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
-        CloseHandle(hProcess);
     }
     else {
         cout << "Start failed!" << endl;
@@ -107,14 +110,16 @@ void SteamCmd::checkServer() {
         const int cpu = stats->getCpu();
         const int load = stats->getLoad();
 
-        cout << "monitor: pid [" << pid << "], memory [" << memory << " MB], cpu [" << cpu << "%], load: [" << load << "%]" << endl;
-
         if (memory > 1023) killProcess("MEMORY TOO HIGH");
         if (load > 98 && stats->getNumSamples() > 20) killProcess("SRCDS BURNING CPU");
+
+        //const int online = game->isOnline();
+
+        cout << "monitor: pid [" << pid << "], memory [" << memory << " MB], cpu [" << cpu << "%], load: [" << load << "%]" << endl;
     }
 }
 
 void SteamCmd::initStats() {
     stats = make_unique<Stats>();
-    game = make_unique<Game>();
+    //game = make_unique<GameClient>();
 }

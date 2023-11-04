@@ -1,49 +1,56 @@
-#include "Game.h"
-#include "Socket.h"
+#define _WINSOCKAPI_
+
+#include "UdpClient.h"
+
 #include <numeric>
 #include <string>
 #include <Windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <iphlpapi.h>
+#include <memory>
+#include <iostream>
+
+#include "GameClient.h"
+
+using namespace std;
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "iphlpapi.lib")
 
-using namespace std;
 
-int Game::getStatus() {
+int GameClient::getStatus() {
 
     // query
-    const auto server = make_unique<ServerInfo>();
+    const auto client = make_unique<UdpClient>();
+    const std::string port = "27015";
+    const vector<string> addrlist = findIps();
 
-    std::string ip = findIp();
-    std::string port = "27015";
-
-    server->start_query(ip, port, "");
-
-    string challenge = server->GetChallenge();
-    if (challenge.length()) {
-        // retry query with challenge
-        server->start_query(ip, port, challenge);
+    int response = -1;
+    string addr;
+    for (string entry: addrlist) {
+        addr = entry;
+        if (response != 0 && response != -4) 
+            client->query(addr, port, "");
     }
 
-    // read response
-    cout << " APPID: " << server->GetAppId() << endl;
-    const int maxPlayers = server->GetMaxPlayers();
-    const int response = maxPlayers > 0 ? 1 : 0;
-    players = server->GetCurPlayers();
+    string challenge = client->GetChallenge();
+    if (challenge.length() >= 4) {
+        client->query(addr, port, challenge);
+    }
+
+    cout << client->GetAppId() << endl;
 
     // push a sample
     constexpr int samples = 20;
     if (online.size() > samples) online.erase(online.begin());
-    if (samples > 0) online.emplace_back(response);
+    if (samples > 0) online.emplace_back(1);
 
-    cout << "players [" << players << "/" << maxPlayers << "]" << endl;
-
-    return response;
+    return 1;
 }
 
-int Game::isOnline() {
-    
+int GameClient::isOnline() {
+
     getStatus();
 
     const int total = std::accumulate(online.begin(), online.end(), 0);
@@ -51,7 +58,7 @@ int Game::isOnline() {
     return total;
 }
 
-string Game::findIp() {
+vector<string> GameClient::findIps() {
 
     //Initialise winsock
     WSADATA wsa;
@@ -68,7 +75,7 @@ string Game::findIp() {
     rv = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, NULL, NULL, &size);
     if (rv != ERROR_BUFFER_OVERFLOW) {
         fprintf(stderr, "GetAdaptersAddresses() failed...");
-        return NULL;
+        return {};
     }
     adapter_addresses = (PIP_ADAPTER_ADDRESSES)malloc(size);
 
@@ -76,8 +83,14 @@ string Game::findIp() {
     if (rv != ERROR_SUCCESS) {
         fprintf(stderr, "GetAdaptersAddresses() failed...");
         free(adapter_addresses);
-        return NULL;
+        {
+            {
+                return {};
+            }
+        }
     }
+
+    vector<std::string> addrlist = {};
 
     for (aa = adapter_addresses; aa != NULL; aa = aa->Next) {
         for (ua = aa->FirstUnicastAddress; ua != NULL; ua = ua->Next) {
@@ -89,11 +102,11 @@ string Game::findIp() {
                 memset(buf, 0, BUFSIZ);
                 getnameinfo(ua->Address.lpSockaddr, ua->Address.iSockaddrLength, buf, sizeof(buf), NULL, 0, NI_NUMERICHOST);
 
-                const string addr(buf);
+                const std::string addr(buf);
 
                 if (strcmp("127.", addr.substr(0, 4).c_str()) != 0 && strcmp("169.254.", addr.substr(0, 8).c_str()) != 0) {
                     // non local and no discovery ip
-                    return addr;
+                    addrlist.push_back(addr);
                 }
             }
 
@@ -101,6 +114,7 @@ string Game::findIp() {
     }
 
     free(adapter_addresses);
+    WSACleanup();
 
-    return "127.0.0.1";
+    return addrlist;
 }

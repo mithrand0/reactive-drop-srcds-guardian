@@ -1,20 +1,17 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 using namespace std;
 
-class Game
+class GameClient
 {
-public:
-	int getStatus();
+public: 
 	int isOnline();
-	string findIp();
-
-
+	int getStatus();
+	vector<string> findIps();
 private:
 	vector<int> online;
-	int players = -1;
 };
 
