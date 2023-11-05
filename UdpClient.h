@@ -153,6 +153,7 @@ public:
 
 			memcpy(challenge, bytes, sizeof(bytes));
 
+			WSACleanup();
 			return -4;
 		}
 
