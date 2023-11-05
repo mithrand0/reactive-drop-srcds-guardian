@@ -48,9 +48,9 @@ void SteamCmd::updateGame(int appid, string branch) {
     system(cmdUpdate.c_str());
 }
 
-void SteamCmd::startGame(int appid, string cmdline) {
+void SteamCmd::startGame(int appid, string cmdline, int gamePort) {
     // start the game
-    const string cmdServer(to_string(appid) + "\\srcds.exe -console -nocrashdialog " + cmdline);
+    const string cmdServer(to_string(appid) + "\\srcds.exe -console -nocrashdialog -nomessagebox " + cmdline);
     cout << "Executing: " + cmdServer << endl;
 
     size_t len;
@@ -61,6 +61,7 @@ void SteamCmd::startGame(int appid, string cmdline) {
         NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 
         stats->setPid(pi.dwProcessId);
+        port = gamePort;
 
         // priority
         cout << "Setting priority class.." << endl;
@@ -113,13 +114,14 @@ void SteamCmd::checkServer() {
         if (memory > 1023) killProcess("MEMORY TOO HIGH");
         if (load > 98 && stats->getNumSamples() > 20) killProcess("SRCDS BURNING CPU");
 
-        //const int online = game->isOnline();
+        const int online = game->isOnline(port);
 
-        cout << "monitor: pid [" << pid << "], memory [" << memory << " MB], cpu [" << cpu << "%], load: [" << load << "%]" << endl;
+        cout << "monitor: pid [" << pid << "], memory [" << memory << " MB], cpu [" << cpu << "%], load: [" << load << "%]" 
+            << ", players [" << game->GetCurPlayers() << "/" << game->GetMaxPlayers() << "]" << endl;
     }
 }
 
 void SteamCmd::initStats() {
     stats = make_unique<Stats>();
-    //game = make_unique<GameClient>();
+    game = make_unique<GameClient>();
 }

@@ -15,7 +15,7 @@ unique_ptr<SteamCmd> steamcmd;
 
 void monitor()
 {
-    Sleep(2000);
+    Sleep(5000);
 
     steamcmd->checkServer();
     
@@ -34,10 +34,12 @@ int main(int argc, char** argv)
 
     std::string branch = "none"; // public
     std::string cmdline;
+    int port = 27015;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i - 1], "-appid") == 0) appid = atoi(argv[i]);
         if (strcmp(argv[i - 1], "-beta") == 0) branch = argv[i];
+        if (strcmp(argv[i - 1], "-port") == 0) port = atoi(argv[i]);
         cmdline = cmdline + " " + argv[i];
     }
 
@@ -77,12 +79,12 @@ int main(int argc, char** argv)
     thread th = thread(monitor);
     th.detach();
 
-    cout << "Entering loop..";
+    cout << "Entering startup loop.." << endl;
 
     // enter update loop
     while (true) {
 
-        steamcmd->startGame(appid, cmdline);
+        steamcmd->startGame(appid, cmdline, port);
 
         cout << "Server did exit." << endl;
 

@@ -42,17 +42,14 @@ typedef SSIZE_T ssize_t;
 char A2S_INFO[] = {
 	0xFF, 0xFF, 0xFF, 0xFF, 0x54, 0x53, 0x6F, 0x75, 0x72, 0x63,
 	0x65, 0x20, 0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65, 0x20, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x00,
-
-	// challenge
-	0x00, 0x00, 0x00, 0x00
+	0x75, 0x65, 0x72, 0x79, 0x00
 };
 
 
 class UdpClient
 {
 public:
-	int  query(string ip_addr, string port, string challenge)
+	int  query(string ip_addr, string port)
 	{
 		//Initialise winsock
 		WSADATA wsa;
@@ -85,40 +82,58 @@ public:
 			return 1;
 		}
 
-		char send[sizeof(A2S_INFO)];
+		char send[sizeof(A2S_INFO) + 4] = {0};
 		memcpy(send, A2S_INFO, strlen(A2S_INFO));
 
-		cout << challenge << endl;
-		if (challenge.length() >= 4) {
-			char chal[4];
-			memcpy(chal, challenge.c_str(), challenge.length());
-			send[25] = chal[0];
-			send[26] = chal[1];
-			send[27] = chal[2];
-			send[28] = chal[3];
+		if (challenge[0] != 0x00) {
+			send[25] = challenge[0];
+			send[26] = challenge[1];
+			send[27] = challenge[2];
+			send[28] = challenge[3];
 		}
 
-		cout << send << endl;
+		// XXX: debug
+		/*
+		cout << "interface: " << ip_addr << endl;
+		cout << "BUF SEND: ";
+		for (int i = 0; i < sizeof(send); i++) {
+			cout << hex << (int)send[i] << " ";
+		}
+		cout << endl;
+		*/
 
-		int resp = sendto(udp_sock, send, strlen(send) + 1, 0,
+		unsigned long nonblocking = 1;
+		ioctlsocket(udp_sock, FIONBIO, &nonblocking);
+
+		int resp = sendto(udp_sock, send, sizeof(send) + 1, 0,
 			result->ai_addr, result->ai_addrlen);
 		if (resp == -1)
 		{
 			std::cout << "[ERROR]Sending packet failed:" << errno << "\n";
 		}
 
-		unsigned long nonblocking = 1;
-		ioctlsocket(udp_sock, FIONBIO, &nonblocking);
+		Sleep(500);
 
-		Sleep(100);
-
-		char buffer[1472];
+		char buffer[1472] = {0};
 		ssize_t recv = recvfrom(udp_sock, buffer, sizeof(buffer), 0,
 			NULL, NULL);
 		if (recv < 1)
 		{
-			std::cout << "[ERROR]Response was empty or error occurred.\n";
+			// no answer
+			WSACleanup();
+			return 1;
+			//std::cout << "[ERROR]Response was empty or error occurred [" << ip_addr << ":" << port << "]" << endl;
 		}
+
+		// XXX: debug
+		/*
+		cout << "interface: " << ip_addr << endl;
+		cout << "BUF RECV: ";
+		for (int i = 0; i < sizeof(buffer); i++) {
+			cout << hex << (int)buffer[i] << " ";
+		}
+		cout << endl;
+		*/
 
 		// if not starting with 0xff, discard
 		for (int i = 0; i < 3; i++) {
@@ -136,10 +151,10 @@ public:
 				buffer[5], buffer[6], buffer[7], buffer[8]
 			};
 
-			challenge = bytes;
+			memcpy(challenge, bytes, sizeof(bytes));
+
 			return -4;
 		}
-
 
 		//Global discard						//
 		int discard;
@@ -394,7 +409,7 @@ private:
 	int os;
 	int password;
 	int secure;
-	std::string challenge;
+	char challenge[5];
 	//char game_version[32];
 
 	std::pair<short, int> __get__byte(char buffer[], int discard) {

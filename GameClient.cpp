@@ -19,43 +19,55 @@ using namespace std;
 #pragma comment(lib, "iphlpapi.lib")
 
 
-int GameClient::getStatus() {
+int GameClient::getStatus(int gamePort) {
 
     // query
     const auto client = make_unique<UdpClient>();
-    const std::string port = "27015";
     const vector<string> addrlist = findIps();
+    string port(to_string(gamePort));
 
     int response = -1;
     string addr;
-    for (string entry: addrlist) {
+    for (string entry : addrlist) {
         addr = entry;
-        if (response != 0 && response != -4) 
-            client->query(addr, port, "");
+        if (response != 0 && response != -4)
+            client->query(addr, port);
     }
 
-    string challenge = client->GetChallenge();
-    if (challenge.length() >= 4) {
-        client->query(addr, port, challenge);
-    }
+    // if no answer, repeat the query on the last interface
+    // it should have the challenge stored internally
+    if (client->GetMaxPlayers() < 1)
+        client->query(addr, port);
 
-    cout << client->GetAppId() << endl;
+    // if it is still not responding, it's offline
+    const bool responding = client->GetMaxPlayers() > 0;
 
+    // store this for stats
+    curPlayers = client->GetCurPlayers();
+    maxPlayers = client->GetMaxPlayers();
+    
     // push a sample
     constexpr int samples = 20;
     if (online.size() > samples) online.erase(online.begin());
-    if (samples > 0) online.emplace_back(1);
+    if (samples > 0) online.emplace_back(responding);
 
-    return 1;
+    return responding;
 }
 
-int GameClient::isOnline() {
+int GameClient::isOnline(int port) {
 
-    getStatus();
-
+    getStatus(port);
     const int total = std::accumulate(online.begin(), online.end(), 0);
 
     return total;
+}
+
+int GameClient::GetCurPlayers() {
+    return curPlayers;
+}
+
+int GameClient::GetMaxPlayers() {
+    return maxPlayers;
 }
 
 vector<string> GameClient::findIps() {
