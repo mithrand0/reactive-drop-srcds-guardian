@@ -77,7 +77,7 @@ void SteamCmd::startGame(int appid, string cmdline, int gamePort) {
 
         // reset cpu stats
         stats->reset();
-
+        stats->setPid(0);
     }
     else {
         cout << "Start failed!" << endl;
@@ -116,8 +116,7 @@ void SteamCmd::checkServer() {
 
         const int online = game->isOnline(port);
 
-        cout << "monitor: pid [" << pid << "], memory [" << memory << " MB], cpu [" << cpu << "%], load: [" << load << "%]" 
-            << ", players [" << game->GetCurPlayers() << "/" << game->GetMaxPlayers() << "]" << endl;
+        cout << "monitor: pid [" << pid << "], players [" << game->GetCurPlayers() << "/" << game->GetMaxPlayers() << "], memory[" << memory << " MB], cpu[" << cpu << "%], load: [" << load << "%] "  << endl;
     }
 }
 
