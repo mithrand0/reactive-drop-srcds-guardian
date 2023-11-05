@@ -116,7 +116,7 @@ void SteamCmd::checkServer() {
 
         const int online = game->isOnline(port);
 
-        cout << "monitor: pid [" << pid << "], players [" << game->GetCurPlayers() << "/" << game->GetMaxPlayers() << "], memory[" << memory << " MB], cpu[" << cpu << "%], load: [" << load << "%] "  << endl;
+        cout << "monitor: pid [" << pid << "], players [" << game->GetCurPlayers() << "/" << game->GetMaxPlayers() << "], memory [" << memory << " MB], cpu [" << cpu << "%], load [" << load << "%] "  << endl;
     }
 }
 
