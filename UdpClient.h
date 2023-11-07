@@ -77,7 +77,7 @@ public:
 		int src_addr = getaddrinfo(ip_addr.c_str(), port.c_str(), &hints, &result);
 		if (src_addr != 0)
 		{
-			std::cout << "[ERROR]Failed to resolve remote socket address:" << gai_strerror(src_addr) << "\n";
+			//std::cout << "[ERROR]Failed to resolve remote socket address:" << gai_strerror(src_addr) << "\n";
 			WSACleanup();
 			return 1;
 		}

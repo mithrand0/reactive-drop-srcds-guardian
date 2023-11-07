@@ -16,7 +16,7 @@ public:
 	void chdir();
 	void updateGame(int appid, string branch);
 	void startGame(int appid, string cmdline, int port);
-	void cleanUp();
+	void cleanUp(int appid);
 	int getPid();
 	void killProcess(string reason);
 	void checkServer();

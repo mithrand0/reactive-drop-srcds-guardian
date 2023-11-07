@@ -1,6 +1,7 @@
 #include <iostream>
 #include <direct.h>
 #include <string>
+#include <format>
 #include <Windows.h>
 
 #include "SteamCmd.h"
@@ -24,8 +25,15 @@ void SteamCmd::install() {
         LPWSTR out = const_cast<LPWSTR>(L"steamcmd.zip");
 
         URLDownloadToFile(NULL, url.c_str(), out, 0, NULL);
+
         cout << "Download finished, extracting.." << endl;
         system("powershell.exe -Command \"Expand-Archive -Path steamcmd.zip -Force\"");
+
+        if (!PathFileExists(file)) {
+            cout << "Error: download blocked or unzip failed for SteamCmd, please download it manually from:" << endl;
+            cout << "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip and unzip it to steamcmd/steamcmd.exe" << endl;
+            exit(8);
+        }
     }
 }
 
@@ -39,19 +47,17 @@ void SteamCmd::chdir() {
 }
 
 void SteamCmd::updateGame(int appid, string branch) {
-    cout << "Updating game.." << endl;
+    cout << "Updating game.." << endl << endl;
 
     // install using appid
-    const string sAppId = to_string(appid);
-    const string cmdUpdate("steamcmd.exe +force_install_dir " + sAppId + " +login anonymous +app_update " + sAppId + " -beta " + branch + " +quit");
-    cout << "Executing: " + cmdUpdate << endl;
+    const string cmdUpdate(format("steamcmd.exe +force_install_dir {0} +login anonymous +app_update {0} -beta {1} +quit", appid, branch));
     system(cmdUpdate.c_str());
 }
 
 void SteamCmd::startGame(int appid, string cmdline, int gamePort) {
     // start the game
-    const string cmdServer(to_string(appid) + "\\srcds.exe -console -nocrashdialog -nomessagebox " + cmdline);
-    cout << "Executing: " + cmdServer << endl;
+    const string cmdServer(format("{}\\srcds.exe -console -nocrashdialog -nomessagebox {}", appid, cmdline));
+    cout << "Executing: " << cmdServer << endl;
 
     size_t len;
     wchar_t wCmd[_MAX_ENV + 1];
@@ -85,9 +91,15 @@ void SteamCmd::startGame(int appid, string cmdline, int gamePort) {
     }
 }
 
-void SteamCmd::cleanUp() {
+void SteamCmd::cleanUp(int appid) {
     cout << "Cleanup old crashdumps.." << endl;
-    system("powershell.exe -Command \"Get-ChildItem -File -Recurse -Include '*.mdmp' | Where { $_.CreationTime -lt (Get-Date).AddDays(-7)} | Remove-Item -Force\"");
+    
+    const string cmdCleanupCrashdumps(format("powershell.exe -Command \"Get-ChildItem -Path {} -File -Recurse -Include '*.mdmp' | Where{{$_.CreationTime -lt (Get-Date).AddDays(-7)}} | Remove-Item -Force\"", appid));
+    system(cmdCleanupCrashdumps.c_str());
+
+    cout << "Cleanup old steam cache.." << endl;
+    const string cmdCleanupSteamCache(format("powershell.exe -Command \"Get-ChildItem -Path {}/steamapps -File -Recurse -Include '*.vpk' | Where{{$_.CreationTime -lt (Get-Date).AddDays(-7)}} | Remove-Item -Force\"", appid));
+    system(cmdCleanupSteamCache.c_str());
 }
 
 int SteamCmd::getPid() {
@@ -95,8 +107,11 @@ int SteamCmd::getPid() {
 }
 
 void SteamCmd::killProcess(string reason) {
-    cout << reason << endl;
+    cout << "_________________" << endl;
     cout << "! KILLING srcds !" << endl;
+    cout << "! " << reason << endl;
+    cout << endl;
+
     HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, false, pi.dwProcessId);
     TerminateProcess(hProcess, 1);
     CloseHandle(hProcess);
@@ -107,7 +122,7 @@ void SteamCmd::checkServer() {
     const int pid = getPid();
     
     if (pid > 0) {
-        const int memory = ceil(stats->getMemory() / 1024 / 1024);
+        const int memory = (int)ceil(stats->getMemory() / 1024 / 1024);
         const int cpu = stats->getCpu();
         const int load = stats->getLoad();
 
@@ -116,7 +131,10 @@ void SteamCmd::checkServer() {
 
         const int online = game->isOnline(port);
 
-        cout << "monitor: pid [" << pid << "], players [" << game->GetCurPlayers() << "/" << game->GetMaxPlayers() << "], memory [" << memory << " MB], cpu [" << cpu << "%], load [" << load << "%] "  << endl;
+        const std::string msg(format("monitor: pid [{}], players [{}/{}], memory [{} MB], cpu [{}%], load [{}%]",
+            pid, game->GetCurPlayers(), game->GetMaxPlayers(), memory, cpu, load));
+
+        cout << msg << endl;
     }
 }
 

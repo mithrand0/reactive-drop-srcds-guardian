@@ -4,10 +4,12 @@
 #include <string>
 #include <thread>
 #include <memory>
+#include <format>
 #include <Windows.h>
 
 #include "SteamCmd.h"
 #include "version.h"
+
 
 using namespace std;
 
@@ -27,7 +29,7 @@ int main(int argc, char** argv)
 {
     // start
     cout << "Initializing Srcds-Guardian .." << endl;
-    cout << "Version: " << VERSION << "/" << RELEASE << endl;
+    cout << format("Version: {} ({} {})", VERSION, __DATE__, __TIME__) << endl;
 
     // find -appid
     int appid = 0;
@@ -70,7 +72,7 @@ int main(int argc, char** argv)
     steamcmd->install();
     steamcmd->chdir();
     
-    steamcmd->cleanUp();
+    steamcmd->cleanUp(appid);
     steamcmd->updateGame(appid, branch);
 
     cout << "Starting monitor.." << endl;
@@ -88,7 +90,7 @@ int main(int argc, char** argv)
 
         cout << "Server did exit." << endl;
 
-        steamcmd->cleanUp();
+        steamcmd->cleanUp(appid);
         
         cout << "Restarting server.." << endl;
         Sleep(10000);

@@ -1,4 +1,4 @@
 #pragma once
 
-#define VERSION "dev"
-#define RELEASE "none"
+#define VERSION "stable/rc"
+#define RELEASE ""
