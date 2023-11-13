@@ -72,8 +72,8 @@ int main(int argc, char** argv)
     steamcmd->install();
     steamcmd->chdir();
     
-    steamcmd->cleanUp(appid);
     steamcmd->updateGame(appid, branch);
+    steamcmd->cleanUp(appid);
 
     cout << "Starting monitor.." << endl;
 
