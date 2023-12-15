@@ -63,6 +63,9 @@ void SteamCmd::startGame(int appid, string cmdline, int gamePort) {
     wchar_t wCmd[_MAX_ENV + 1];
     mbstowcs_s(&len, wCmd, _MAX_ENV + 1, cmdServer.c_str(), _MAX_ENV);
 
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_MINIMIZE;
+
     if (CreateProcess(NULL, wCmd,
         NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 
