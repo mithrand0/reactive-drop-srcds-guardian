@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 {
     // start
     cout << "Initializing Srcds-Guardian .." << endl;
-    cout << format("Version: {} ({} {})", VERSION, __DATE__, __TIME__) << endl;
+    cout << "Version: " << VERSION << " (" << __DATE__ << " " << __TIME__ ")" << endl;
 
     // find -appid
     int appid = 0;
