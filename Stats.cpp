@@ -73,6 +73,14 @@ int Stats::getMemory() {
     return used;
 }
 
+int Stats::getMemorySelf() {
+    PROCESS_MEMORY_COUNTERS_EX pmc;
+    GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+    SIZE_T used = pmc.PrivateUsage;
+
+    return used;
+}
+
 int Stats::getNumSamples() {
     return load.size();
 }

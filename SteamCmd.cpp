@@ -128,14 +128,15 @@ void SteamCmd::checkServer() {
         const int memory = (int)ceil(stats->getMemory() / 1024 / 1024);
         const int cpu = stats->getCpu();
         const int load = stats->getLoad();
+        const int memorySelf = (int)ceil(stats->getMemorySelf() / 1024);
 
         if (memory > 1023) killProcess("MEMORY TOO HIGH");
         if (load > 98 && stats->getNumSamples() > 20) killProcess("SRCDS BURNING CPU");
 
         const int online = game->isOnline(port);
 
-        const std::string msg(format("monitor: pid [{}], players [{}/{}], memory [{} MB], cpu [{}%], load [{}%]",
-            pid, game->GetCurPlayers(), game->GetMaxPlayers(), memory, cpu, load));
+        const std::string msg(format("monitor: pid [{}], players [{}/{}], memory [{} MB], cpu [{}%], load [{}%], monitoring [{} KB]",
+            pid, game->GetCurPlayers(), game->GetMaxPlayers(), memory, cpu, load, memorySelf ));
 
         cout << msg << endl;
     }

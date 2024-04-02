@@ -18,5 +18,6 @@ private:
 	vector<int> online;
 	int curPlayers = 0;
 	int maxPlayers = 0;
+	vector<string> addrlist = {};
 };
 

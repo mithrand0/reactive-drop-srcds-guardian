@@ -21,13 +21,16 @@ using namespace std;
 
 int GameClient::getStatus(int gamePort) {
 
+    // initialize address list on first load
+    if (addrlist.size() < 1) addrlist = findIps();
+
     // query
-    const auto client = make_unique<UdpClient>();
-    const vector<string> addrlist = findIps();
+    const unique_ptr<UdpClient> client = make_unique<UdpClient>();
     string port(to_string(gamePort));
 
     int response = -1;
     string addr;
+
     for (string entry : addrlist) {
         addr = entry;
         if (response != 0 && response != -4)

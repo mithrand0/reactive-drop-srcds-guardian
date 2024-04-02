@@ -11,6 +11,7 @@ public:
 	void setPid(int pid);
 	void reset();
 	int getMemory();
+	int getMemorySelf();
 	int getCpu();
 	int getLoad();
 	int getNumSamples();
