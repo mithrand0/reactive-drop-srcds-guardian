@@ -46,11 +46,33 @@ void SteamCmd::chdir() {
     }
 }
 
-void SteamCmd::updateGame(int appid, string branch) {
+void SteamCmd::updateGame(int appid, string branch, bool validate) {
     cout << "Updating game.." << endl << endl;
 
+    // target folder
+    std::string folder = std::to_string(appid);
+
+    // if beta given
+    std::string beta = "";
+    if (strcmp(branch.c_str(), "none") != 0) {
+        beta = "-beta " + branch;
+    }
+
+    // verify files
+    std::string verify = validate ? "validate" : "";
+
+    // as:rd workaround
+    std::string prefix = "";
+
+    if (appid == 582400) {
+        prefix = appid == 582400 ? "1007 +app_update " : "";
+        appid = 563560;
+    }
+
     // install using appid
-    const string cmdUpdate(format("steamcmd.exe +force_install_dir {0} +login anonymous +app_update {0} -beta {1} +quit", appid, branch));
+    const string cmdUpdate(format("steamcmd.exe +force_install_dir {0} +login anonymous +app_update {1} {2} {3} {4} +quit", folder, prefix, appid, beta, verify));
+    cout << "Executing: " << cmdUpdate << endl;
+
     system(cmdUpdate.c_str());
 }
 
@@ -135,8 +157,8 @@ void SteamCmd::checkServer() {
 
         const int online = game->isOnline(port);
 
-        const std::string msg(format("monitor: pid [{}], players [{}/{}], memory [{} MB], cpu [{}%], load [{}%], monitoring [{} KB]",
-            pid, game->GetCurPlayers(), game->GetMaxPlayers(), memory, cpu, load, memorySelf ));
+        const std::string msg(format("monitor: pid [{}], players [{}/{}], memory [{} MB], cpu [{}%], load [{}%]",
+            pid, game->GetCurPlayers(), game->GetMaxPlayers(), memory, cpu, load));
 
         cout << msg << endl;
     }

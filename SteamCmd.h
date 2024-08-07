@@ -14,7 +14,7 @@ public:
 	void initStats();
 	void install();
 	void chdir();
-	void updateGame(int appid, string branch);
+	void updateGame(int appid, string branch, bool validate = false);
 	void startGame(int appid, string cmdline, int port);
 	void cleanUp(int appid);
 	int getPid();

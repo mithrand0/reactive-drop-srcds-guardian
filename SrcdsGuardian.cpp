@@ -17,7 +17,7 @@ unique_ptr<SteamCmd> steamcmd;
 
 void monitor()
 {
-    Sleep(5000);
+    Sleep(2000);
 
     steamcmd->checkServer();
     
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
     steamcmd->install();
     steamcmd->chdir();
     
-    steamcmd->updateGame(appid, branch);
+    steamcmd->updateGame(appid, branch, true);
     steamcmd->cleanUp(appid);
 
     cout << "Starting monitor.." << endl;
