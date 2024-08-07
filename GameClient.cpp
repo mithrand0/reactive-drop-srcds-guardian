@@ -25,7 +25,12 @@ int GameClient::getStatus(int gamePort) {
     if (addrlist.size() < 1) addrlist = findIps();
 
     // query
-    const unique_ptr<UdpClient> client = make_unique<UdpClient>();
+    static std::unique_ptr<UdpClient> client;
+
+    if (!client) {
+        client = make_unique<UdpClient>();
+    }
+
     string port(to_string(gamePort));
 
     int response = -1;
