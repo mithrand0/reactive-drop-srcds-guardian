@@ -59,7 +59,7 @@ public:
 			exit(EXIT_FAILURE);
 		}
 
-		int udp_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		int udp_sock = (int)socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (udp_sock == -1)
 		{
 			std::cout << "[ERROR]Failed to create UDP socket\n";
@@ -106,7 +106,7 @@ public:
 		ioctlsocket(udp_sock, FIONBIO, &nonblocking);
 
 		int resp = sendto(udp_sock, send, sizeof(send) + 1, 0,
-			result->ai_addr, result->ai_addrlen);
+			result->ai_addr, (int)result->ai_addrlen);
 		if (resp == -1)
 		{
 			std::cout << "[ERROR]Sending packet failed:" << errno << "\n";

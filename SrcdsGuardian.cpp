@@ -5,24 +5,47 @@
 #include <thread>
 #include <memory>
 #include <format>
+#include <signal.h>
 #include <Windows.h>
 
 #include "SteamCmd.h"
 #include "version.h"
 
+BOOL WINAPI ConsoleHandler(DWORD);
 
 using namespace std;
 
 unique_ptr<SteamCmd> steamcmd;
+bool running = true;
 
 void monitor()
 {
     Sleep(2000);
-
-    steamcmd->checkServer();
     
-    thread th = thread(monitor);
-    th.detach();
+    if (running) {
+        steamcmd->checkServer();
+
+        thread th = thread(monitor);
+        th.detach();
+    }
+    else {
+        steamcmd->killProcess("exit requested by user");
+    }
+}
+
+BOOL WINAPI HandlerRoutine(_In_ DWORD dwCtrlType) {
+    switch (dwCtrlType)
+    {
+    case CTRL_C_EVENT:
+        cout << endl << "____________________________________" << endl;
+        cout << "[Ctrl]+C received, requesting exit.." << endl;
+        running = false;
+        // Signal is handled - don't pass it on to the next handler
+        return TRUE;
+    default:
+        // Pass signal on to the next handler
+        return FALSE;
+    }
 }
 
 int main(int argc, char** argv)
@@ -30,6 +53,9 @@ int main(int argc, char** argv)
     // start
     cout << "Initializing Srcds-Guardian .." << endl;
     cout << "Version: " << VERSION << " (" << __DATE__ << " " << __TIME__ ")" << endl;
+
+    // set console handler
+    SetConsoleCtrlHandler(HandlerRoutine, TRUE);
 
     // find -appid
     int appid = 0;
@@ -84,7 +110,7 @@ int main(int argc, char** argv)
     cout << "Entering startup loop.." << endl;
 
     // enter update loop
-    while (true) {
+    while (running) {
 
         steamcmd->startGame(appid, cmdline, port);
 
@@ -92,9 +118,11 @@ int main(int argc, char** argv)
 
         steamcmd->cleanUp(appid);
         
-        cout << "Restarting server.." << endl;
-        Sleep(10000);
-
-        steamcmd->updateGame(appid, branch);
+        if (running) {
+            cout << "Restarting server.." << endl;
+            Sleep(10000);
+         
+            steamcmd->updateGame(appid, branch);
+        }
     }
 }

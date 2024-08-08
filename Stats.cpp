@@ -42,7 +42,7 @@ int Stats::getCpu() {
 
     memcpy(&sys, &fsys, sizeof(FILETIME));
     memcpy(&user, &fuser, sizeof(FILETIME));
-    percent = (sys.QuadPart - lastSysCPU.QuadPart) +
+    percent = (double)(sys.QuadPart - lastSysCPU.QuadPart) +
         (user.QuadPart - lastUserCPU.QuadPart);
     percent /= (now.QuadPart - lastCPU.QuadPart);
     percent *= 100;
@@ -55,11 +55,11 @@ int Stats::getCpu() {
     if (load.size() > samples) load.erase(load.begin());
     if (percent >= 0) load.emplace_back(ceil(percent));
 
-    return percent;
+    return (int)round(percent);
 }
 
 int Stats::getLoad() {
-    const int avg = ceil(accumulate(load.begin(), load.end(), 0) / load.size());
+    const int avg = (int)ceil(accumulate(load.begin(), load.end(), 0) / load.size());
     return avg > 0 ? avg : 0;
 }
 
@@ -70,7 +70,7 @@ int Stats::getMemory() {
     GetProcessMemoryInfo(hProcess, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
     SIZE_T used = pmc.PrivateUsage;
 
-    return used;
+    return (int)used;
 }
 
 int Stats::getMemorySelf() {
@@ -78,9 +78,9 @@ int Stats::getMemorySelf() {
     GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
     SIZE_T used = pmc.PrivateUsage;
 
-    return used;
+    return (int)used;
 }
 
 int Stats::getNumSamples() {
-    return load.size();
+    return (int)load.size();
 }

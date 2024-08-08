@@ -20,6 +20,7 @@ public:
 	int getPid();
 	void killProcess(string reason);
 	void checkServer();
+	int createProcess(string cmd);
 private:
 	int port;
 

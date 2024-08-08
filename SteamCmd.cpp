@@ -132,8 +132,7 @@ int SteamCmd::getPid() {
 }
 
 void SteamCmd::killProcess(string reason) {
-    cout << "_________________" << endl;
-    cout << "! KILLING srcds !" << endl;
+    cout << endl << "_________________" << endl;
     cout << "! " << reason << endl;
     cout << endl;
 
@@ -152,8 +151,8 @@ void SteamCmd::checkServer() {
         const int load = stats->getLoad();
         const int memorySelf = (int)ceil(stats->getMemorySelf() / 1024);
 
-        if (memory > 1023) killProcess("MEMORY TOO HIGH");
-        if (load > 98 && stats->getNumSamples() > 20) killProcess("SRCDS BURNING CPU");
+        if (memory > 1023) killProcess("Killing server: MEMORY TOO HIGH");
+        if (load > 98 && stats->getNumSamples() > 20) killProcess("Killing server: SRCDS BURNING CPU");
 
         const int online = game->isOnline(port);
 
