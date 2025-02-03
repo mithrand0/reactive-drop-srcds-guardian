@@ -70,7 +70,7 @@ void SteamCmd::updateGame(int appid, string branch, bool validate) {
     }
 
     // install using appid
-    const string cmdUpdate(format("steamcmd.exe +force_install_dir {0} +login anonymous +app_update {1} {2} {3} {4} +quit", folder, prefix, appid, beta, verify));
+    const string cmdUpdate(format("steamcmd.exe -overrideminos +force_install_dir {0} +login anonymous +app_update {1} {2} {3} {4} +quit", folder, prefix, appid, beta, verify));
     cout << "Executing: " << cmdUpdate << endl;
 
     system(cmdUpdate.c_str());
